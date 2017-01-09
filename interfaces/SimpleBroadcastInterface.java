@@ -9,10 +9,11 @@ import java.util.Collection;
 import core.CBRConnection;
 import core.Connection;
 import core.DTNHost;
-import static core.DTNHost.MaliciousNodes;
 import core.NetworkInterface;
 import core.Settings;
+import static java.lang.Double.POSITIVE_INFINITY;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 
 /**
  * A simple Network Interface that provides a constant bit-rate service, where
@@ -38,15 +39,14 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	public NetworkInterface replicate()	{
 		return new SimpleBroadcastInterface(this);
 	}
-
-	/**
+        /**
 	 * Tries to connect this host to another host. The other host must be
 	 * active and within range of this host for the connection to succeed. 
 	 * @param anotherInterface The interface to connect to
 	 */
 	public void connect(NetworkInterface anotherInterface) {
 		
-                System.out.println("CONNECT!");
+                //System.out.println("CONNECT!");
                 
                 if (isScanning()  
 				&& anotherInterface.getHost().isActive() 
@@ -65,6 +65,10 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 
 			Connection con = new CBRConnection(this.host, this, 
 					anotherInterface.getHost(), anotherInterface, conSpeed);
+                        
+                        //getAllMsgs(this.host,anotherInterface.getHost());
+                        //DTNHost.NodeInfoUpdate(this.host);
+                       
                         /*
                         int n;
                         n = Array.getLength(DTNHost.MaliciousNodes);
@@ -86,7 +90,7 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	 */
 	public void update() {
 		// First break the old ones
-		 System.out.println("UPDATE!");
+		//System.out.println("UPDATE!");
                 optimizer.updateLocation(this);
 		for (int i=0; i<this.connections.size(); ) {
 			Connection con = this.connections.get(i);
@@ -95,8 +99,15 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 			// all connections should be up at this stage
 			assert con.isUp() : "Connection " + con + " was down!";
                         
+                        int f = 0;
+                        //this.host.MaliciousNodes[0] = anotherInterface.getHost();
                         
-			if (!isWithinRange(anotherInterface) || anotherInterface.getHost().getAddress() == 4) {
+                        for(DTNHost key: this.host.MaliciousInfo.keySet())
+                        {
+                            if(anotherInterface.getHost().equals(key) && (int)this.host.MaliciousInfo.get(key) >= anotherInterface.getHost().counter )
+                                f=1;
+                        }
+                        if (!isWithinRange(anotherInterface) || f == 1  ) {
 				disconnect(con,anotherInterface);
 				connections.remove(i);
 			}
@@ -108,29 +119,25 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 		Collection<NetworkInterface> interfaces =
 			optimizer.getNearInterfaces(this);
 		for (NetworkInterface i : interfaces) {
-			/*
-                        if (i.getHost().getAddress() == 4)
-                        {
-                            connections.remove(i);
-                            
-                            return;
-                        }
-                        */
+			
                         connect(i);
+                      
 		}
-	}
+	
+          }
 
 	/** 
 	 * Creates a connection to another host. This method does not do any checks
 	 * on whether the other node is in range or active 
 	 * @param anotherInterface The interface to create the connection to
 	 */
-	public void createConnection(NetworkInterface anotherInterface) {
+	
+        public void createConnection(NetworkInterface anotherInterface) {
                 System.out.println("CREATE CONNECTION!");
 		
                 if (!isConnected(anotherInterface) && (this != anotherInterface)) {    			
 			// connection speed is the lower one of the two speeds
-                        if (anotherInterface.getHost().getAddress() == 4)return;
+                        //if (anotherInterface.getHost().getAddress() == 4)return;
 			int conSpeed = anotherInterface.getTransmitSpeed();
 			if (conSpeed > this.transmitSpeed) {
 				conSpeed = this.transmitSpeed; 
